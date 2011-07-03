@@ -6,6 +6,7 @@
             "128": "icon128.png" },
   "background_page": "bg.html",
   "content_scripts": [{
+    "all_frames": true,
     "run_at":     "document_start",
     "matches":    ["http://*/*", "https://*/*"],
     "js":         ["jquery.js", "dotjs.js"]
