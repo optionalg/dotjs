@@ -1,32 +1,56 @@
 var requestHandler = {
-listeners : [],
-addListener: function __addListener(name, listener) {
-              this.listeners.push({
-                name: name,
-                listener: listener
-                });
+listeners : { /* name: listener */ },
+addListener: function _addListener(name, listener) {
+  if(typeof this.listeners[name] !== 'undefined') {
+    console.log('requestHandler: overwrite listener');
+  }
+  this.listeners[name] = listener;
 },
-_onRequest: function __onRequest(msg, sendr, sendResponse) {
+onRequest: function _onRequest(msg, sender, sendResponse) {
+              var that = requestHandler, i,len,
+                  listener = that.listeners[msg.name];
               try {
-                requestHandler.listeners.forEach(function(val) {
-                    if(msg.name === val.name) {
-                      var ret = val.listener.apply(null, [msg, sendr, sendResponse]);
-                    }
-                  });
-              } catch(e) {}
+                if(!listener) { return; }
+                listener(msg, sender, sendResponse);
+              } catch(e) { console.error(e); }
             }
 };
-chrome.extension.onRequest.addListener(requestHandler._onRequest);
+chrome.extension.onRequest.addListener(requestHandler.onRequest);
 
 
-requestHandler.addListener('dj_getContent', function(msg, sender, fn) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', msg.url, true);
-    xhr.onreadystatechange = function(){
-      if (xhr.readyState === 4 && xhr.status === 200){
-        fn(xhr.responseText);
+requestHandler.addListener('dj_xhr', function(msg, sender, fn) {
+    var xhr = new XMLHttpRequest(), d = msg.details, header,
+      setupEvent = function(xhr, url, eventName, callback) {
+        xhr[eventName] = function () {
+          var isComplete = xhr.readyState == 4;
+          var responseState = {
+                responseText: xhr.responseText,
+                readyState: xhr.readyState,
+                responseHeaders: isComplete ? xhr.getAllResponseHeaders() : "",
+                status: isComplete ? xhr.status : 0,
+                statusText: isComplete ? xhr.statusText : "",
+                finalUrl: isComplete ? url : ""
+          };
+          callback({eventName: eventName, responseState: responseState});
+        };
+      };
+
+    xhr.open(d.method, d.url, true);
+    if (d.overrideMimeType) { xhr.overrideMimeType(d.overrideMimeType); }
+    if (d.headers) {
+      for (header in d.headers) {
+        if(d.headers.hasOwnProperty(header)) {
+          xhr.setRequestHeader(header, d.headers[header]);
+        }
       }
-    };
-    xhr.send(null);
+    }
+
+    var eventNames = ["onload", "onerror" /* "onreadystatechange" */]; //cant support onreadystatechange cause sendResponse fnction can be called just once
+    for (var i = 0; i < eventNames.length; i++ ) {
+      var eventName = eventNames[i];
+      setupEvent(xhr, d.url, eventName, fn);
+    }
+
+    xhr.send(d.data ? d.data : null);
 });
 

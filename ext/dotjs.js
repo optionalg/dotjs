@@ -1,10 +1,13 @@
 var dj = {};
-dj.getContent = function __getContent(url, fn) {
+
+dj.xhr = function _dj_xhr(details) {
   var E = chrome.extension;
-  E.sendRequest({name: 'dj_getContent', url: url}, function(ret) {
-      fn(ret);
+  E.sendRequest({name: 'dj_xhr', details: details}, function(ret) {
+        details[ret.eventName](ret.responseState);
       });
 };
+
+var GM_xmlhttpRequest = dj.xhr;
 
 $.ajax({
   url: 'http://localhost:3131/'+window.location.host.replace('www.','')+'.js',
