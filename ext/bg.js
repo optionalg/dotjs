@@ -1,24 +1,24 @@
 var requestHandler = {
-listeners : { /* name: listener */ },
-addListener: function _addListener(name, listener) {
-  if(typeof this.listeners[name] !== 'undefined') {
-    console.log('requestHandler: overwrite listener');
-  }
-  this.listeners[name] = listener;
-},
-onRequest: function _onRequest(msg, sender, sendResponse) {
-              var that = requestHandler, i,len,
-                  listener = that.listeners[msg.name];
-              try {
-                if(!listener) { return; }
-                listener(msg, sender, sendResponse);
-              } catch(e) { console.error(e); }
-            }
+  listeners : { /* name: listener */ },
+  addListener: function _addListener(name, listener) {
+    if(typeof this.listeners[name] !== 'undefined') {
+      console.log('requestHandler: overwrite listener');
+    }
+    this.listeners[name] = listener;
+  },
+  onRequest: function _onRequest(msg, sender, sendResponse) {
+               var that = requestHandler, i,len,
+               listener = that.listeners[msg.name];
+               try {
+                 if(!listener) { return; }
+                 listener(msg, sender, sendResponse);
+               } catch(e) { console.error(e); }
+             }
 };
 chrome.extension.onRequest.addListener(requestHandler.onRequest);
 
 
-requestHandler.addListener('dj_xhr', function(msg, sender, fn) {
+requestHandler.addListener('dj_xhr', function(msg, sender, sendResponse) {
     var xhr = new XMLHttpRequest(), d = msg.details, header,
       setupEvent = function(xhr, url, eventName, callback) {
         xhr[eventName] = function () {
@@ -48,7 +48,7 @@ requestHandler.addListener('dj_xhr', function(msg, sender, fn) {
     var eventNames = ["onload", "onerror" /* "onreadystatechange" */]; //cant support onreadystatechange cause sendResponse fnction can be called just once
     for (var i = 0; i < eventNames.length; i++ ) {
       var eventName = eventNames[i];
-      setupEvent(xhr, d.url, eventName, fn);
+      setupEvent(xhr, d.url, eventName, sendResponse);
     }
 
     xhr.send(d.data ? d.data : null);

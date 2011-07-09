@@ -7,7 +7,26 @@ dj.xhr = function _dj_xhr(details) {
       });
 };
 
-var GM_xmlhttpRequest = dj.xhr;
+dj.addcss = function _dj_addcss(css) {
+  var p, s, id='dotjs-style', doc = window.document;
+
+  s = doc.getElementById(id);
+  if(!s) {
+    p = doc.getElementsByTagName('head').item(0);
+    if(!p) {
+      p = doc.docElement;
+    }
+    s = doc.createElement('style');
+    s.type = 'text/css';
+    s.id = id;
+    p.appendChild(s);
+  }
+
+  s.innerHTML = s.innerHTML + css;
+};
+
+var GM_xmlhttpRequest = dj.xhr,
+    GM_addStyle = dj.addcss;
 
 $.ajax({
   url: 'http://localhost:3131/'+window.location.host.replace('www.','')+'.js',
